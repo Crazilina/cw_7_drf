@@ -1,7 +1,8 @@
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from habits.models import Habit
 from habits.serializers import HabitSerializer
+from habits.pagination import HabitPagination
 from users.permissions import IsOwner
 
 
@@ -22,18 +23,28 @@ class HabitCreateAPIView(CreateAPIView):
 
 class HabitListAPIView(ListAPIView):
     """
-    Контроллер для получения списка всех привычек текущего пользователя и публичных привычек.
+    Контроллер для получения списка всех привычек текущего пользователя с пагинацией.
     """
-    queryset = Habit.objects.all()
     serializer_class = HabitSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = HabitPagination
 
     def get_queryset(self):
         """
-        Переопределяет queryset для фильтрации по текущему пользователю и публичным привычкам.
+        Переопределяет queryset для фильтрации по текущему пользователю.
         """
         user = self.request.user
-        return Habit.objects.filter(owner=user) | Habit.objects.filter(is_public=True)
+        return Habit.objects.filter(owner=user)
+
+
+class PublicHabitListAPIView(ListAPIView):
+    """
+    Контроллер для получения списка публичных привычек с пагинацией.
+    """
+    queryset = Habit.objects.filter(is_public=True)
+    serializer_class = HabitSerializer
+    permission_classes = [AllowAny]
+    pagination_class = HabitPagination
 
 
 class HabitRetrieveAPIView(RetrieveAPIView):
