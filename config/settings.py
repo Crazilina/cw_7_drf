@@ -156,10 +156,15 @@ CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
 CELERY_BEAT_SCHEDULE = {
-    'deactivate_inactive_users': {
-        'task': 'users.tasks.deactivate_inactive_users',
-        'schedule': timedelta(days=1),  # Запускать ежедневно
+    'send_habit_reminders': {
+        'task': 'habits.tasks.send_habit_reminders',
+        'schedule': timedelta(minutes=1),
     },
 }
 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+TELEGRAM_URL = "https://api.telegram.org/bot"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+LOCATION = os.getenv("LOCATION")
