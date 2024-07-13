@@ -6,9 +6,9 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="API",
+        title="Habit Tracker API",
         default_version='v1',
-        description="Test description",
+        description="API documentation for the Habit Tracker project",
         terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="contact@local.api"),
         license=openapi.License(name="BSD License"),
