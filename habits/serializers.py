@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, ValidationError
+from rest_framework.serializers import ModelSerializer
 from habits.models import Habit
 from habits.validators import validate_habit
 

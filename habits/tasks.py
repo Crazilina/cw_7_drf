@@ -1,12 +1,9 @@
 from celery import shared_task
 from django.utils import timezone
+from datetime import timedelta, datetime
 from habits.models import Habit
-from .services import send_telegram_message
+from habits.services import send_telegram_message
 import random
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 MOTIVATIONAL_MESSAGES = [
     "Продолжайте в том же духе и достигайте своих целей!",
@@ -40,19 +37,44 @@ def get_random_message():
 def send_habit_reminders():
     """
     Отправляет напоминания пользователям о выполнении привычек.
+
+    Напоминания отправляются за час и за 10 минут до выполнения привычки.
     """
-    now = timezone.localtime(timezone.now())
+    now = timezone.localtime()
     current_time = now.time()
-    habits = Habit.objects.filter(time__hour=current_time.hour, time__minute=current_time.minute)
+    habits = Habit.objects.all()
 
     for habit in habits:
-        tg_chat = habit.owner.tg_chat_id
-        if habit.is_pleasant:
-            message = (f"Привет, {habit.owner.email}!\n\nНе забудьте насладиться Вашей приятной привычкой: "
-                       f"{habit.action} в {habit.time.strftime('%H:%M')} в {habit.place}.\n\n")
-        else:
-            message = (f"Привет, {habit.owner.email}!\n\nНе забудьте выполнить свою привычку: "
-                       f"{habit.action} в {habit.time.strftime('%H:%M')} в {habit.place}.\n\n"
-                       f"{get_random_message()}")
-        send_telegram_message(tg_chat, message)
+        habit_time = datetime.combine(now.date(), habit.time)
+        notify_time_1 = (habit_time - timedelta(hours=1)).time()
+        notify_time_2 = (habit_time - timedelta(minutes=10)).time()
 
+        # Проверка времени для отправки уведомлений за час
+        if notify_time_1 <= current_time <= (datetime.combine(now.date(), notify_time_1) + timedelta(minutes=1)).time():
+            send_reminder(habit)
+
+        # Проверка времени для отправки уведомлений за 10 минут
+        if notify_time_2 <= current_time <= (datetime.combine(now.date(), notify_time_2) + timedelta(minutes=1)).time():
+            send_reminder(habit)
+
+
+def send_reminder(habit):
+    """ Отправляет напоминание о привычке пользователю."""
+    tg_chat = habit.owner.tg_chat_id
+    name = habit.owner.tg_nick if habit.owner.tg_nick else 'Дорогой пользователь'
+    if habit.is_pleasant:
+        message = (f"Привет, {name}!\n\nНе забудьте насладиться Вашей приятной привычкой: "
+                   f"{habit.action} в {habit.time.strftime('%H:%M')} в условленном месте ({habit.place}).\n\n")
+    else:
+        reward_message = ""
+        if habit.related_habit:
+            related_action = Habit.objects.get(id=habit.related_habit_id).action
+            reward_message = f"После выполнения, можете насладиться: {related_action}.\n\n"
+        elif habit.reward:
+            reward_message = f"После выполнения, можете наградить себя: {habit.reward}.\n\n"
+
+        message = (f"Привет, {name}!\n\nНе забудьте выполнить свою привычку: "
+                   f"{habit.action} в {habit.time.strftime('%H:%M')} в условленном месте ({habit.place}).\n\n"
+                   f"{reward_message}{get_random_message()}")
+
+    send_telegram_message(tg_chat, message)
