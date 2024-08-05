@@ -32,7 +32,7 @@
 
 ```sh
 git clone https://github.com/Crazilina/cw_7_drf.git
-cd hw_24.1_drf
+cd cw_7_drf
 ```
 
 ### 2. Создание сети Docker (если не существует)
